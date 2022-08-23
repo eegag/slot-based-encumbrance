@@ -1,0 +1,23 @@
+{
+  "name": "slot-based-encumbrance",
+  "title": "Slot-Based Encumbrance",
+  "description": "An option to use slot-based encumbrance rules for the Old-School Essentials system.",
+  "authors": [
+    {
+      "name": "eegag"
+    }
+  ],
+  "version": "0.2.1",
+  "minimumCoreVersion": "0.9.2",
+  "system": "ose",
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ],
+  "esmodules": [
+    "scripts/slot-based-encumbrance.js"
+  ]
+}

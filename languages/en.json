@@ -1,0 +1,29 @@
+{
+  "SLOT-BASED-ENCUMBRANCE": {
+	"settings": {
+	  "EncumbranceSlotBased": "Slot-Based",
+		"BaseValueOnly": "Use Base Value Only",
+		"StrToBase": "Add STR Mod to Base",
+		"ConToBase": "Add CON Mod to Base",
+		"StrAsBase": "Use STR Score as Base",
+		"ConAsBase": "Use CON Score as Base",
+		"DetermineSlots": "Maximum Slots Method",
+		"DetermineSlotsHint": "How does the game determine a character's maximum slots?",
+		"BaseSlotValue": "Base Inventory Slot Maximum",
+		"BaseSlotValueHint": "Not used if an ability score is used as the base!",
+		"CoinsPerSlot": "Coins Per Slot",
+		"CoinsPerSlotHint": "How many coins (of any denomination) fit in one inventory slot?",
+		"CountEquipped": "Exclude equipped items?",
+		"CountEquippedHint": "Choose if the slot value of carried or worn items counts toward encumbrance"
+	},
+	"labels": {
+	  "CharacterSheet": "Slot-Based Encumbrance Character Sheet",
+		"SlotsField": "Slots"
+	},
+	"messages": {
+		"TooManyHeldItemsMessage": "This character does not have enough hands to hold this many items.",
+		"TooMuchArmorMessage": "This character cannot wear more than one suit of armor!",
+		"EncumberedWarningMessage": "This character is encumbered and has a movement speed of 0."
+	}
+  }
+}
