@@ -36,6 +36,6 @@
   "esmodules": [
     "scripts/slot-based-encumbrance.js"
   ],
-	"manifest": "https://github.com/eegag/slot-based-encumbrance/releases/download/v0.2.1/module.json",
-  "download": "https://github.com/eegag/slot-based-encumbrance/releases/download/v0.2.1/module.zip"
+	"manifest": "https://github.com/eegag/slot-based-encumbrance/releases/download/v0.3.1/module.json",
+  "download": "https://github.com/eegag/slot-based-encumbrance/releases/download/v0.3.1/module.zip"
 }
