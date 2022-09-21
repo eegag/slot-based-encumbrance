@@ -7,9 +7,25 @@
       "name": "eegag"
     }
   ],
-  "version": "0.2.1",
-  "minimumCoreVersion": "0.9.2",
-  "system": "ose",
+  "version": "0.3.1",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "10"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "ose",
+        "type": "system",
+        "compatibility": {}
+      },
+      {
+        "id": "ose-dev",
+        "type": "system",
+        "compatibility": {}
+      }
+    ]
+	},
   "languages": [
     {
       "lang": "en",
@@ -19,5 +35,7 @@
   ],
   "esmodules": [
     "scripts/slot-based-encumbrance.js"
-  ]
+  ],
+	"manifest": "https://github.com/eegag/slot-based-encumbrance/releases/download/v0.2.1/module.json",
+  "download": "https://github.com/eegag/slot-based-encumbrance/releases/download/v0.2.1/module.zip"
 }
