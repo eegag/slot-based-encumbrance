@@ -18,7 +18,8 @@
 	},
 	"labels": {
 	  "CharacterSheet": "Slot-Based Encumbrance Character Sheet",
-		"SlotsField": "Slots"
+		"SlotsField": "Slots",
+		"AdventuringGear": "Gear"
 	},
 	"messages": {
 		"TooManyHeldItemsMessage": "This character does not have enough hands to hold this many items.",
