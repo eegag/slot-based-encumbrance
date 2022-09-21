@@ -253,7 +253,7 @@
   {{!-- Misc items --}}
   <div id="gear" class="item-category-title flexrow">
     <div class="category-caret"><i class="fas fa-caret-down"></i></div>
-    <div class="category-name">{{localize "OSE.items.Misc"}}</div>
+    <div class="category-name">{{localize "SLOT-BASED-ENCUMBRANCE.labels.AdventuringGear"}}</div>
     <div class="field-short"><i class="fas fa-hashtag"></i></div>
     <div class="field-short"><i class="fas fa-weight-hanging"></i></div>
     <div class="item-controls">
@@ -389,7 +389,7 @@
   </ol>
 </section>
 <section>
-  {{#with data.inventory}}
+  {{#with system.inventory}}
   <div class="encumbrance {{#if encumbered}}encumbered{{/if}}">
     <span class="encumbrance-bar" style="width:{{pct}}%"></span>
     <span class="encumbrance-label">{{value}} / {{max}}</span>
