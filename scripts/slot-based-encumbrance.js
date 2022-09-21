@@ -37,7 +37,7 @@ class UpdateItemSheet {
 			const weaponSlotField = `
 						<label title="${slotsLabel}"><i class="fas fa-weight-hanging"></i></label>
             <div class="form-fields">
-              <input type="text" name="data.slots" value="${data.data.slots}" data-dtype="Number" />
+              <input type="text" name="data.slots" value="${data.system.slots}" data-dtype="Number" />
             </div>`;
 					
 			// Finds the details section and the weight field
@@ -52,7 +52,7 @@ class UpdateItemSheet {
 			const slotInputField = `
 						<label>${slotsLabel}</label>
 						<div class="form-fields">
-							<input type="text" name="data.slots" value="${data.data.slots}" data-dtype="Number" />
+							<input type="text" name="data.slots" value="${data.system.slots}" data-dtype="Number" />
 						</div>`;
 					
 			// Finds the details section and the weight field
@@ -90,8 +90,8 @@ function loadActorSheetCharacter(superclass) {
 }
 
 /**
- * Function to extend the OseItem class during init hook
- * to add totalSlots property
+ * Function to extend the OseActor class during init hook
+ * to compute encumbrance and movement speed
  */
 function sbeActor(superclass) {
 	return class extends superclass {
@@ -106,36 +106,41 @@ function sbeActor(superclass) {
 	   * Then calls function to determine movement speed
 	   */
 		computeInventorySlots() {
-			if (this.data.type != "character") {
+			if (this.type != "character" && this.type != "monster") {
 				return;
 			}
 			
-			const data = this.data.data;
+			const data = this.system;
 			const countEquipped = game.settings.get("slot-based-encumbrance", "countEquipped");
 			
 			// Compute encumbrance
-			const items = [...this.data.items.values()];
+			const items = [...this.items.values()];
 			let heldItems = 0;
 			let wornArmor = 0;
 			let totalWeight = items.reduce((acc, item) => {
 				
+				// Unequip items on monster actors
+				if (this.type == "monster") {
+					item.system.equipped = false;
+				}
+				
 				// Equipped containers don't count, but track how many hands you need
-				if (countEquipped && item.type == "container" && item.data.data.equipped) {
-					heldItems = item.data.data.totalSlots > 4 ? heldItems + 2 : heldItems + 1;
-					return acc + item.data.data.slots - item.data.data.totalSlots;
+				if (countEquipped && item.type == "container" && item.system.equipped) {
+					heldItems = item.system.totalSlots > 4 ? heldItems + 2 : heldItems + 1;
+					return acc + item.system.slots - item.system.totalSlots;
 				// Don't double count containers and their contents
 				} else if (item.type == "container") {
-					return acc + item.data.data.slots;
+					return acc + item.system.slots;
 				// Equipped armor doesn't count either
-				} else if (countEquipped && item.data.data.containerId == "" && item.data.data.equipped && item.type == "armor" && item.data.data.type != "shield") {
+				} else if (countEquipped && item.system.containerId == "" && item.system.equipped && item.type == "armor" && item.system.type != "shield") {
 					wornArmor++;
 					return acc;
 				// Other equipped items don't count either, but track how many hands you need
-				}	else if (countEquipped && item.data.data.containerId == "" && item.data.data.equipped) {
-					heldItems = heldItems + item.data.data.slots;
+				}	else if (countEquipped && item.system.containerId == "" && item.system.equipped) {
+					heldItems = heldItems + item.system.slots;
 					return acc;
 				} else {
-					return acc + item.data.data.totalSlots;
+					return acc + item.system.totalSlots;
 				}
 			}, 0);
 
@@ -152,23 +157,27 @@ function sbeActor(superclass) {
 					game.i18n.localize("SLOT-BASED-ENCUMBRANCE.messages.TooManyHeldItemsMessage")
 					);
 			}
-
-			let max = 0;
 			
-			// Set individual actor slot maximum
-			if (game.settings.get("slot-based-encumbrance", "determineSlots") == "strscore") {
-				max = data.scores.str.value;
-			} else if (game.settings.get("slot-based-encumbrance", "determineSlots") == "conscore") {
-				max = data.scores.con.value;
-			} else {
-				max = game.settings.get("slot-based-encumbrance", "baseSlots");
-			}
-						
-			// Add STR or CON bonus if enabled
-			if (game.settings.get("slot-based-encumbrance", "determineSlots") == "strbonus") {
-				max += data.scores.str.mod;
-			} else if (game.settings.get("slot-based-encumbrance", "determineSlots") == "conbonus") {
-				max += data.scores.con.mod;
+			let max = 0;
+				
+			if (this.type != "monster") {
+				// Set individual actor slot maximum
+				if (game.settings.get("slot-based-encumbrance", "determineSlots") == "strscore") {
+					max = data.scores.str.value;
+				} else if (game.settings.get("slot-based-encumbrance", "determineSlots") == "conscore") {
+					max = data.scores.con.value;
+				} else {
+					max = game.settings.get("slot-based-encumbrance", "baseSlots");
+				}
+							
+				// Add STR or CON bonus if enabled
+				if (game.settings.get("slot-based-encumbrance", "determineSlots") == "strbonus") {
+					max += data.scores.str.mod;
+				} else if (game.settings.get("slot-based-encumbrance", "determineSlots") == "conbonus") {
+					max += data.scores.con.mod;
+				}
+			} else if ("inventory" in data) {
+				max = data.inventory.max;
 			}
 
 			data.inventory = {
@@ -178,17 +187,19 @@ function sbeActor(superclass) {
 				value: totalWeight,
 			};
 
-			this.calculateMovementSpeed();
+			if (this.type != "monster") {
+				this.calculateMovementSpeed();
+			}
 		}
 
 		calculateMovementSpeed() {
-			const data = this.data.data;
+			const data = this.system;
 			const weight = data.inventory.value;
 
-			const armors = this.data.items.filter((i) => i.type === "armor");
+			const armors = this.items.filter((i) => i.type === "armor");
 			let heaviest = 0;
 			armors.forEach((a) => {
-				const armorData = a.data.data;
+				const armorData = a.system;
 				const weight = armorData.type;
 				const equipped = armorData.equipped;
 				if (equipped) {
@@ -210,6 +221,7 @@ function sbeActor(superclass) {
 					data.movement.base = 60;
 					break;
 			}
+			
 			if (data.inventory.encumbered) {
 				data.movement.base = 0;
 				if (game.ready && this.isOwner && !game.user.isGM) {
@@ -235,8 +247,8 @@ function sbeItem(superclass) {
 
 		prepareDerivedData() {
 		super.prepareDerivedData();
-		this.data.data.slots = this.createSlotValue();
-		this.data.data.totalSlots = this.createTotalSlots();
+		this.system.slots = this.createSlotValue();
+		this.system.totalSlots = this.createTotalSlots();
 		}
 
 		/** 
@@ -246,21 +258,21 @@ function sbeItem(superclass) {
 		createSlotValue() {
 			const coinsPerSlot = game.settings.get("slot-based-encumbrance", "coinsPerSlot");
 
-			if (this.data.data.slots == null || this.data.data.slots == undefined) {
-				if (!this.data.data.weight) {
+			if (this.system.slots == null || this.system.slots == undefined) {
+				if (!this.system.weight) {
 					return 1;
-				}	else if (this.data.type == "armor" && this.data.data.type != "shield") {
-					return Math.floor(this.data.data.weight/200);
-				} else if (this.data.type == "treasure") {
-					return Math.ceil(this.data.data.cost/coinsPerSlot);
+				}	else if (this.type == "armor" && this.system.type != "shield") {
+					return Math.floor(this.system.weight/200);
+				} else if (this.type == "treasure") {
+					return Math.ceil(this.system.cost/coinsPerSlot);
 				} else {
-					return Math.ceil(this.data.data.weight/100);
+					return Math.ceil(this.system.weight/100);
 				}
 			// Reset empty containers
-			} else if (this.data.type == "container" && this.data.data.slots == 0) {
+			} else if (this.type == "container" && this.system.slots == 0) {
 				return 1;
 			} else {
-				return this.data.data.slots;
+				return this.system.slots;
 			}
 		}
 
@@ -270,7 +282,7 @@ function sbeItem(superclass) {
 		 * Check for bundled items
 		 */
 		createTotalSlots() {
-			if (this.data.data.slots === undefined) {
+			if (this.system.slots === undefined) {
 				return;
 			}
 			
@@ -279,8 +291,8 @@ function sbeItem(superclass) {
 			//Container totalSlots calculation (with embedded totalSlots math to recalc item totals)
 			if (this.type == "container" && game.ready && this.actor) {
 
-				const actorItems = this.actor.data.items._source;
-				const containerID = this.data._id;
+				const actorItems = this.actor.items._source;
+				const containerID = this._id;
 				let slotTotal = 0;
 
 				for (let i = 0; i < actorItems.length; i++) {
@@ -299,20 +311,20 @@ function sbeItem(superclass) {
 				}
 				
 				if (slotTotal === 0) {
-					slotTotal = this.data.data.slots;
+					slotTotal = this.system.slots;
 				} else {
-					this.data.data.slots = 0;
+					this.system.slots = 0;
 				}
 				return slotTotal;
 
 			//Standard totalSlots calculation
 			} else {				
-				if (this.data.data.treasure) {
-					return Math.ceil(this.data.data.quantity.value/coinsPerSlot);
-				} else if (!this.data.data.quantity.max) {
-					return this.data.data.slots * this.data.data.quantity.value;
+				if (this.system.treasure) {
+					return Math.ceil(this.system.quantity.value/coinsPerSlot);
+				} else if (!this.system.quantity.max) {
+					return this.system.slots * this.system.quantity.value;
 				} else {
-					return Math.ceil(this.data.data.quantity.value/this.data.data.quantity.max);
+					return Math.ceil(this.system.quantity.value/this.system.quantity.max);
 				}
 			}
 		}
@@ -420,7 +432,7 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
 Hooks.once('init', () => {
   registerSettings();
 	preloadHandlebarsTemplates();
-	// Enhance class OseItem with totalSlots during init
+	// Extend OseItem and OseActor classes with slots and totalSlots during init
 	CONFIG.Item.documentClass = sbeItem(CONFIG.Item.documentClass);
 	CONFIG.Actor.documentClass = sbeActor(CONFIG.Actor.documentClass);
 });
