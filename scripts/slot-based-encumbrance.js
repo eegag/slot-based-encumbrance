@@ -37,7 +37,7 @@ class UpdateItemSheet {
 			const weaponSlotField = `
 						<label title="${slotsLabel}"><i class="fas fa-weight-hanging"></i></label>
             <div class="form-fields">
-              <input type="text" name="data.slots" value="${data.system.slots}" data-dtype="Number" />
+              <input type="text" name="system.slots" value="${data.system.slots}" data-dtype="Number" />
             </div>`;
 					
 			// Finds the details section and the weight field
@@ -52,7 +52,7 @@ class UpdateItemSheet {
 			const slotInputField = `
 						<label>${slotsLabel}</label>
 						<div class="form-fields">
-							<input type="text" name="data.slots" value="${data.system.slots}" data-dtype="Number" />
+							<input type="text" name="system.slots" value="${data.system.slots}" data-dtype="Number" />
 						</div>`;
 					
 			// Finds the details section and the weight field
@@ -133,7 +133,9 @@ function sbeActor(superclass) {
 					return acc + item.system.slots;
 				// Equipped armor doesn't count either
 				} else if (countEquipped && item.system.containerId == "" && item.system.equipped && item.type == "armor" && item.system.type != "shield") {
-					wornArmor++;
+					if (item.system.type != "unarmored") {
+						wornArmor++;
+					}
 					return acc;
 				// Other equipped items don't count either, but track how many hands you need
 				}	else if (countEquipped && item.system.containerId == "" && item.system.equipped) {
@@ -294,7 +296,7 @@ function sbeItem(superclass) {
 				const actorItems = this.actor.items._source;
 				const containerID = this._id;
 				let slotTotal = 0;
-
+				
 				for (let i = 0; i < actorItems.length; i++) {
 					if (actorItems[i].data.containerId == containerID) {
 						let totalSlots;
@@ -439,8 +441,8 @@ Hooks.once('init', () => {
 
 Hooks.once('ready', () => {
   // Unregister default OSE character sheet to load slot-based version
-	const sbeCharSheet = loadActorSheetCharacter(CONFIG["Actor"].sheetClasses.character["ose.OseActorSheetCharacter"].cls);
-	Actors.unregisterSheet("ose", CONFIG["Actor"].sheetClasses.character["ose.OseActorSheetCharacter"].cls);
+	const sbeCharSheet = loadActorSheetCharacter(CONFIG.Actor.sheetClasses.character["ose.l"].cls);
+	Actors.unregisterSheet("ose", CONFIG.Actor.sheetClasses.character["ose.l"].cls);
 	Actors.registerSheet("ose", sbeCharSheet, {
     types: ["character"],
     makeDefault: true,

@@ -23,7 +23,7 @@
         ></div>
         <h4 class="item-name" title="{{item.name}}">{{item.name~}}</h4>
         <div class="tag-row icon-row">
-          {{#each item.data.data.manualTags as |tag|}} {{#if (getTagIcon
+          {{#each item.system.manualTags as |tag|}} {{#if (getTagIcon
           tag.value)}}
           <img
             title="{{tag.title}}"
@@ -31,19 +31,21 @@
             width="24"
             height="24"
           />
-          {{/if}} {{/each}} {{#each item.data.data.manualTags as |tag|}}
-          {{#unless (getTagIcon tag.value)}}
-          <span title="{{tag.title}}">
-						{{tag.value}}{{#unless @last}},{{/unless}}</span>
+          {{/if}} {{/each}} {{#each item.system.manualTags as |tag|}} {{#unless
+          (getTagIcon tag.value)}}
+          <span title="{{tag.title}}"
+            >{{tag.value}}{{#unless @last}},{{/unless}}</span
+          >
+
           {{/unless}} {{/each}}
         </div>
         <div class="field-short">
-					{{item.data.data.slots}}
+					{{item.system.slots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner }} {{#if (eq @root.type "character")}}
           <a
-            class="item-control item-toggle {{#unless item.data.data.equipped}}item-unequipped{{/unless}}"
+            class="item-control item-toggle {{#unless item.system.equipped}}item-unequipped{{/unless}}"
             title='{{localize "OSE.items.Equip"}}'
           >
             <i class="fas fa-tshirt"></i>
@@ -94,16 +96,16 @@
         ></div>
         <h4 class="item-name" title="{{item.name}}">{{item.name~}}</h4>
         <div class="field-short">
-          {{#if @root.config.ascendingAC}} {{item.data.data.aac.value}} {{else}}
-          {{item.data.data.ac.value}} {{/if}}
+          {{#if @root.config.ascendingAC}} {{item.system.aac.value}} {{else}}
+          {{item.system.ac.value}} {{/if}}
         </div>
         <div class="field-short">
-          {{item.data.data.totalSlots}}
+          {{item.system.totalSlots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner }} {{#if (eq @root.type "character")}}
           <a
-            class="item-control item-toggle {{#unless item.data.data.equipped}}item-unequipped{{/unless}}"
+            class="item-control item-toggle {{#unless item.system.equipped}}item-unequipped{{/unless}}"
             title='{{localize "OSE.items.Equip"}}'
           >
             <i class="fas fa-tshirt"></i>
@@ -152,9 +154,9 @@
         ></div>
         <div class="category-caret"><i class="fas fa-caret-down"></i></div>
         <h4 class="item-name" title="{{bag.name}}">{{bag.name~}}</h4>
-        {{#if bag.data.data.itemIds}}
+        {{#if bag.system.itemIds}}
 				<div class="field-short container-total-weight">
-          {{bag.data.data.totalSlots}}
+          {{bag.system.totalSlots}}
         </div>
 				{{else}}
 				<div class="field-short container-total-weight">
@@ -163,18 +165,18 @@
 				{{/if}}
         <div class="field-short quantity">
         </div>
-        {{#if bag.data.data.itemIds}}
+        {{#if bag.system.itemIds}}
 				<div class="field-short container-item-weight">
         </div>
 				{{else}}
 				<div class="field-short container-item-weight">
-					{{bag.data.data.totalSlots}}
+					{{bag.system.totalSlots}}
         </div>
 				{{/if}}
         <div class="item-controls">
           {{#if @root.owner}}
           <a
-            class="item-control item-toggle {{#unless bag.data.data.equipped}}item-unequipped{{/unless}}"
+            class="item-control item-toggle {{#unless bag.system.equipped}}item-unequipped{{/unless}}"
             title='{{localize "OSE.items.Equip"}}'
           >
             <i class="fas fa-tshirt"></i>
@@ -193,7 +195,7 @@
         item=bag}}
       </div>
       <ol class="item-list contained-items">
-        {{#each bag.data.data.itemIds as |item|}}
+        {{#each bag.system.itemIds as |item|}}
         <li class="item-entry item" data-item-id="{{item.id}}">
           <div
             class="item-header flexrow {{#if (eq item.type 'weapon') }}item-rollable{{/if}}"
@@ -207,15 +209,15 @@
 						</div>
 						<div class="field-short quantity">
               <input
-                value="{{item.data.data.quantity.value}}"
+                value="{{item.system.quantity.value}}"
                 type="text"
                 placeholder="0"
                 data-field="value"
               />
-							{{#if item.data.data.quantity.max}}<span>/{{item.data.data.quantity.max}}</span>{{/if}}
+							{{#if item.system.quantity.max}}<span>/{{item.system.quantity.max}}</span>{{/if}}
             </div>
             <div class="field-short">
-              {{item.data.data.totalSlots}}
+              {{item.system.totalSlots}}
             </div>
             <div class="item-controls">
               {{#if @root.owner}}
@@ -228,14 +230,14 @@
               {{/if}}
             </div>
           </div>
-          {{#if item.data.data.quantity.max }} {{#if (lte
-          item.data.data.quantity.max 38)}}
+          {{#if item.system.quantity.max }} {{#if (lte
+          item.system.quantity.max 38)}}
           <div class="consumable-counter">
             <label>{{localize "OSE.items.uses"}}</label>
-            {{#times item.data.data.quantity.value}}
+            {{#times item.system.quantity.value}}
             <div class="full-mark"></div>
-            {{/times}} {{#times (subtract item.data.data.quantity.max
-            item.data.data.quantity.value)}}
+            {{/times}} {{#times (subtract item.system.quantity.max
+            item.system.quantity.value)}}
             <div class="empty-mark"></div>
             {{/times}}
           </div>
@@ -277,20 +279,20 @@
         <h4 class="item-name" title="{{item.name}}">{{item.name~}}</h4>
         <div class="field-short quantity">
           <input
-            value="{{item.data.data.quantity.value}}"
+            value="{{item.system.quantity.value}}"
             type="text"
             placeholder="0"
             data-field="value"
           />
-					{{#if item.data.data.quantity.max}}<span>/{{item.data.data.quantity.max}}</span>{{/if}}
+					{{#if item.system.quantity.max}}<span>/{{item.system.quantity.max}}</span>{{/if}}
         </div>
         <div class="field-short">
-					{{item.data.data.totalSlots}}
+					{{item.system.totalSlots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner}}
           <a
-            class="item-control item-toggle {{#unless item.data.data.equipped}}item-unequipped{{/unless}}"
+            class="item-control item-toggle {{#unless item.system.equipped}}item-unequipped{{/unless}}"
             title='{{localize "OSE.items.Equip"}}'
           >
             <i class="fas fa-tshirt"></i>
@@ -304,14 +306,14 @@
           {{/if}}
         </div>
       </div>
-      {{#if item.data.data.quantity.max }} {{#if (lte
-      item.data.data.quantity.max 38)}}
+      {{#if item.system.quantity.max }} {{#if (lte
+      item.system.quantity.max 38)}}
       <div class="consumable-counter">
         <label>{{localize "OSE.items.uses"}}</label>
-        {{#times item.data.data.quantity.value}}
+        {{#times item.system.quantity.value}}
         <div class="full-mark"></div>
-        {{/times}} {{#times (subtract item.data.data.quantity.max
-        item.data.data.quantity.value)}}
+        {{/times}} {{#times (subtract item.system.quantity.max
+        item.system.quantity.value)}}
         <div class="empty-mark"></div>
         {{/times}}
       </div>
@@ -353,21 +355,21 @@
         ></div>
         <h4 class="item-name" title="{{item.name}}">{{item.name~}}</h4>
         <div class="field-long">
-          {{mult item.data.data.quantity.value item.data.data.cost}}
+          {{mult item.system.quantity.value item.system.cost}}
         </div>
         <div class="field-short quantity">
           <input
-            value="{{item.data.data.quantity.value}}"
+            value="{{item.system.quantity.value}}"
             type="text"
             placeholder="0"
             data-field="value"
           />
-          {{#if item.data.data.quantity.max}}
-          <span>/{{item.data.data.quantity.max}}</span>
+          {{#if item.system.quantity.max}}
+          <span>/{{item.system.quantity.max}}</span>
           {{/if}}
         </div>
         <div class="field-short">
-					{{item.data.data.totalSlots}}
+					{{item.system.totalSlots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner}}
