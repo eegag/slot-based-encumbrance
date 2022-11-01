@@ -31,6 +31,10 @@ class UpdateItemSheet {
 		*/
 		const slotsLabel = game.i18n.localize("SLOT-BASED-ENCUMBRANCE.labels.SlotsField");
 		
+		if (data.type == "ability" || data.type == "spell") {
+			return;
+		}
+		
 		if (data.type == "weapon") {
 
 			// Slot field html literal
@@ -141,7 +145,9 @@ function sbeActor(superclass) {
 				}	else if (countEquipped && item.system.containerId == "" && item.system.equipped) {
 					heldItems = heldItems + item.system.slots;
 					return acc;
-				} else {
+				} else if (item.type == "ability" || item.type == "spell"){
+					return acc;
+				}	else {
 					return acc + item.system.totalSlots;
 				}
 			}, 0);
@@ -249,6 +255,11 @@ function sbeItem(superclass) {
 
 		prepareDerivedData() {
 		super.prepareDerivedData();
+		
+		if (this.type == "ability" || this.type == "spell") {
+			return;
+		}
+		
 		this.system.slots = this.createSlotValue();
 		this.system.totalSlots = this.createTotalSlots();
 		}
@@ -259,6 +270,10 @@ function sbeItem(superclass) {
 		*/
 		createSlotValue() {
 			const coinsPerSlot = game.settings.get("slot-based-encumbrance", "coinsPerSlot");
+
+			if (this.type == "ability" || this.type == "spell") {
+				return;
+			}
 
 			if (this.system.slots == null || this.system.slots == undefined) {
 				if (!this.system.weight) {
@@ -284,7 +299,7 @@ function sbeItem(superclass) {
 		 * Check for bundled items
 		 */
 		createTotalSlots() {
-			if (this.system.slots === undefined) {
+			if (this.type == "ability" || this.type == "spell" || this.system.slots === undefined) {
 				return;
 			}
 			
