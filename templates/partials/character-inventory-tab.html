@@ -23,11 +23,10 @@
         ></div>
         <h4 class="item-name" title="{{item.name}}">{{item.name~}}</h4>
         <div class="tag-row icon-row">
-          {{#each item.system.manualTags as |tag|}} {{#if (getTagIcon
-          tag.value)}}
+          {{#each item.system.manualTags as |tag|}} {{#if tag.image}}
           <img
             title="{{tag.title}}"
-            src="{{getTagIcon tag.value}}"
+            src="{{tag.image}}"
             width="24"
             height="24"
           />
@@ -40,7 +39,7 @@
           {{/unless}} {{/each}}
         </div>
         <div class="field-short">
-					{{item.system.slots}}
+					{{item.flags.slots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner }} {{#if (eq @root.type "character")}}
@@ -100,7 +99,7 @@
           {{item.system.ac.value}} {{/if}}
         </div>
         <div class="field-short">
-          {{item.system.totalSlots}}
+          {{item.flags.totalSlots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner }} {{#if (eq @root.type "character")}}
@@ -154,9 +153,9 @@
         ></div>
         <div class="category-caret"><i class="fas fa-caret-down"></i></div>
         <h4 class="item-name" title="{{bag.name}}">{{bag.name~}}</h4>
-        {{#if bag.system.itemIds}}
+        {{#if bag.system.contents}}
 				<div class="field-short container-total-weight">
-          {{bag.system.totalSlots}}
+          {{bag.flags.totalSlots}}
         </div>
 				{{else}}
 				<div class="field-short container-total-weight">
@@ -165,18 +164,18 @@
 				{{/if}}
         <div class="field-short quantity">
         </div>
-        {{#if bag.system.itemIds}}
+        {{#if bag.system.contents}}
 				<div class="field-short container-item-weight">
         </div>
 				{{else}}
 				<div class="field-short container-item-weight">
-					{{bag.system.totalSlots}}
+					{{bag.flags.totalSlots}}
         </div>
 				{{/if}}
         <div class="item-controls">
           {{#if @root.owner}}
           <a
-            class="item-control item-toggle {{#unless bag.system.equipped}}item-unequipped{{/unless}}"
+						class="item-control item-toggle {{#unless bag.flags.equipped}}item-unequipped{{/unless}}"
             title='{{localize "OSE.items.Equip"}}'
           >
             <i class="fas fa-tshirt"></i>
@@ -195,7 +194,7 @@
         item=bag}}
       </div>
       <ol class="item-list contained-items">
-        {{#each bag.system.itemIds as |item|}}
+        {{#each bag.system.contents as |item|}}
         <li class="item-entry item" data-item-id="{{item.id}}">
           <div
             class="item-header flexrow {{#if (eq item.type 'weapon') }}item-rollable{{/if}}"
@@ -217,7 +216,7 @@
 							{{#if item.system.quantity.max}}<span>/{{item.system.quantity.max}}</span>{{/if}}
             </div>
             <div class="field-short">
-              {{item.system.totalSlots}}
+              {{item.flags.totalSlots}}
             </div>
             <div class="item-controls">
               {{#if @root.owner}}
@@ -287,12 +286,12 @@
 					{{#if item.system.quantity.max}}<span>/{{item.system.quantity.max}}</span>{{/if}}
         </div>
         <div class="field-short">
-					{{item.system.totalSlots}}
+					{{item.flags.totalSlots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner}}
           <a
-            class="item-control item-toggle {{#unless item.system.equipped}}item-unequipped{{/unless}}"
+						class="item-control item-toggle {{#unless item.flags.equipped}}item-unequipped{{/unless}}"
             title='{{localize "OSE.items.Equip"}}'
           >
             <i class="fas fa-tshirt"></i>
@@ -369,7 +368,7 @@
           {{/if}}
         </div>
         <div class="field-short">
-					{{item.system.totalSlots}}
+					{{item.flags.totalSlots}}
         </div>
         <div class="item-controls">
           {{#if @root.owner}}
@@ -391,7 +390,7 @@
   </ol>
 </section>
 <section>
-  {{#with system.inventory}}
+  {{#with flags.inventory}}
   <div class="encumbrance {{#if encumbered}}encumbered{{/if}}">
     <span class="encumbrance-bar" style="width:{{pct}}%"></span>
     <span class="encumbrance-label">{{value}} / {{max}}</span>
