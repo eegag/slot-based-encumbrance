@@ -41,7 +41,7 @@ class UpdateItemSheet {
 			const weaponSlotField = `
 						<label title="${slotsLabel}"><i class="fas fa-weight-hanging"></i></label>
             <div class="form-fields">
-              <input type="text" name="system.slots" value="${data.system.slots}" data-dtype="Number" />
+              <input type="text" name="flags.slots" value="${data.flags.slots}" data-dtype="Number" />
             </div>`;
 					
 			// Finds the details section and the weight field
@@ -56,7 +56,7 @@ class UpdateItemSheet {
 			const slotInputField = `
 						<label>${slotsLabel}</label>
 						<div class="form-fields">
-							<input type="text" name="system.slots" value="${data.system.slots}" data-dtype="Number" />
+							<input type="text" name="flags.slots" value="${data.flags.slots}" data-dtype="Number" />
 						</div>`;
 					
 			// Finds the details section and the weight field
@@ -86,6 +86,22 @@ function loadActorSheetCharacter(superclass) {
 		static get defaultOptions() {
 			return foundry.utils.mergeObject(super.defaultOptions, {
 				template: `modules/slot-based-encumbrance/templates/character-sheet.html`,
+			});
+		}
+		
+		activateListeners(html) {
+			super.activateListeners(html);
+			
+			html.find(".item-toggle").click(async (ev) => {
+				const li = $(ev.currentTarget).parents(".item");
+				const item = this.actor.items.get(li.data("itemId"));
+				if (item.type != "weapon" && item.type != "armor") {
+					await item.update({
+						flags: {
+							equipped: !item.flags.equipped,
+						},
+					});
+				}
 			});
 		}
 	}
@@ -129,12 +145,12 @@ function sbeActor(superclass) {
 				}
 				
 				// Equipped containers don't count, but track how many hands you need
-				if (countEquipped && item.type == "container" && item.system.equipped) {
-					heldItems = item.system.totalSlots > 4 ? heldItems + 2 : heldItems + 1;
-					return acc + item.system.slots - item.system.totalSlots;
+				if (countEquipped && item.type == "container" && item.flags.equipped) {
+					heldItems = item.flags.totalSlots > 4 ? heldItems + 2 : heldItems + 1;
+					return acc + item.flags.slots - item.flags.totalSlots;
 				// Don't double count containers and their contents
 				} else if (item.type == "container") {
-					return acc + item.system.slots;
+					return acc + item.flags.slots;
 				// Equipped armor doesn't count either
 				} else if (countEquipped && item.system.containerId == "" && item.system.equipped && item.type == "armor" && item.system.type != "shield") {
 					if (item.system.type != "unarmored") {
@@ -142,13 +158,13 @@ function sbeActor(superclass) {
 					}
 					return acc;
 				// Other equipped items don't count either, but track how many hands you need
-				}	else if (countEquipped && item.system.containerId == "" && item.system.equipped) {
-					heldItems = heldItems + item.system.slots;
+				}	else if (countEquipped && item.system.containerId == "" && (item.system.equipped || item.flags.equipped)) {
+					heldItems = heldItems + item.flags.slots;
 					return acc;
 				} else if (item.type == "ability" || item.type == "spell"){
 					return acc;
 				}	else {
-					return acc + item.system.totalSlots;
+					return acc + item.flags.totalSlots;
 				}
 			}, 0);
 
@@ -184,11 +200,11 @@ function sbeActor(superclass) {
 				} else if (game.settings.get("slot-based-encumbrance", "determineSlots") == "conbonus") {
 					max += data.scores.con.mod;
 				}
-			} else if ("inventory" in data) {
-				max = data.inventory.max;
+			} else if ("inventory" in this.flags) {
+				max = this.flags.inventory.max;
 			}
-
-			data.inventory = {
+			
+			this.flags.inventory = {
 				pct: Math.clamped((100 * parseFloat(totalWeight)) / max, 0, 100),
 				max: max,
 				encumbered: totalWeight > max || heldItems > 2,
@@ -202,7 +218,7 @@ function sbeActor(superclass) {
 
 		calculateMovementSpeed() {
 			const data = this.system;
-			const weight = data.inventory.value;
+			const weight = this.flags.inventory.value;
 
 			const armors = this.items.filter((i) => i.type === "armor");
 			let heaviest = 0;
@@ -230,7 +246,7 @@ function sbeActor(superclass) {
 					break;
 			}
 			
-			if (data.inventory.encumbered) {
+	    if (this.flags.inventory.encumbered) {
 				data.movement.base = 0;
 				if (game.ready && this.isOwner && !game.user.isGM) {
 					ui.notifications.warn(
@@ -260,8 +276,8 @@ function sbeItem(superclass) {
 			return;
 		}
 		
-		this.system.slots = this.createSlotValue();
-		this.system.totalSlots = this.createTotalSlots();
+		this.flags.slots = this.createSlotValue();
+		this.flags.totalSlots = this.createTotalSlots();
 		}
 
 		/** 
@@ -275,7 +291,7 @@ function sbeItem(superclass) {
 				return;
 			}
 
-			if (this.system.slots == null || this.system.slots == undefined) {
+			if (this.flags.slots == null || this.flags.slots == undefined) {
 				if (!this.system.weight) {
 					return 1;
 				}	else if (this.type == "armor" && this.system.type != "shield") {
@@ -286,10 +302,10 @@ function sbeItem(superclass) {
 					return Math.ceil(this.system.weight/100);
 				}
 			// Reset empty containers
-			} else if (this.type == "container" && this.system.slots == 0) {
+			} else if (this.type == "container" && this.flags.slots == 0) {
 				return 1;
 			} else {
-				return this.system.slots;
+				return this.flags.slots;
 			}
 		}
 
@@ -299,7 +315,7 @@ function sbeItem(superclass) {
 		 * Check for bundled items
 		 */
 		createTotalSlots() {
-			if (this.type == "ability" || this.type == "spell" || this.system.slots === undefined) {
+			if (this.type == "ability" || this.type == "spell" || this.flags.slots === undefined) {
 				return;
 			}
 			
@@ -308,19 +324,19 @@ function sbeItem(superclass) {
 			//Container totalSlots calculation (with embedded totalSlots math to recalc item totals)
 			if (this.type == "container" && game.ready && this.actor) {
 
-				const actorItems = this.actor.items._source;
+				const actorItems = this.actor.items.contents;
 				const containerID = this._id;
 				let slotTotal = 0;
 				
 				for (let i = 0; i < actorItems.length; i++) {
-					if (actorItems[i].data.containerId == containerID) {
+					if (actorItems[i].system.containerId == containerID) {
 						let totalSlots;
-						if (actorItems[i].data.treasure) {
-							totalSlots = Math.ceil(actorItems[i].data.quantity.value/coinsPerSlot);
-						}	else if (!actorItems[i].data.quantity.max) {
-							totalSlots = actorItems[i].data.slots * actorItems[i].data.quantity.value;
+						if (actorItems[i].system.treasure) {
+							totalSlots = Math.ceil(actorItems[i].system.quantity.value/coinsPerSlot);
+						}	else if (!actorItems[i].system.quantity.max) {
+							totalSlots = actorItems[i].flags.slots * actorItems[i].system.quantity.value;
 						} else {
-							totalSlots = Math.ceil(actorItems[i].data.quantity.value/actorItems[i].data.quantity.max);
+							totalSlots = Math.ceil(actorItems[i].system.quantity.value/actorItems[i].system.quantity.max);
 						}
 						
 						slotTotal = slotTotal + totalSlots;
@@ -328,9 +344,9 @@ function sbeItem(superclass) {
 				}
 				
 				if (slotTotal === 0) {
-					slotTotal = this.system.slots;
+					slotTotal = this.flags.slots;
 				} else {
-					this.system.slots = 0;
+					this.flags.slots = 0;
 				}
 				return slotTotal;
 
@@ -339,7 +355,7 @@ function sbeItem(superclass) {
 				if (this.system.treasure) {
 					return Math.ceil(this.system.quantity.value/coinsPerSlot);
 				} else if (!this.system.quantity.max) {
-					return this.system.slots * this.system.quantity.value;
+					return this.flags.slots * this.system.quantity.value;
 				} else {
 					return Math.ceil(this.system.quantity.value/this.system.quantity.max);
 				}
@@ -456,8 +472,8 @@ Hooks.once('init', () => {
 
 Hooks.once('ready', () => {
   // Unregister default OSE character sheet to load slot-based version
-	const sbeCharSheet = loadActorSheetCharacter(CONFIG.Actor.sheetClasses.character["ose.l"].cls);
-	Actors.unregisterSheet("ose", CONFIG.Actor.sheetClasses.character["ose.l"].cls);
+	const sbeCharSheet = loadActorSheetCharacter(CONFIG.Actor.sheetClasses.character["ose.M"].cls);
+	Actors.unregisterSheet("ose", CONFIG.Actor.sheetClasses.character["ose.M"].cls);
 	Actors.registerSheet("ose", sbeCharSheet, {
     types: ["character"],
     makeDefault: true,
