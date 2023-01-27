@@ -34,7 +34,7 @@ Allows all types of items to be equipped (not just weapons and armor).
 - If a player tries to carry more items in their inventory than their slot maximum, the module will flag them as encumbered and set their speed to 0 regardless of the Movement Calculation Method.
 
 **CONFIGURE DETAILED MOVEMENT** If the Movement Calculation Method is *Detailed*, use this form to set the paramaters for each speed threshold
-*e.g.* To mirror Detailed encumbrance from OSE Classic Fantasy, input "Up to 4 slots for 120' Mv", "Up to 6 slots for 90' Mv", and "Up to 8 slots for 60' Mv".
+- *e.g.* To mirror Detailed encumbrance from OSE Classic Fantasy, input "Up to 4 slots for 120' Mv", "Up to 6 slots for 90' Mv", and "Up to 8 slots for 60' Mv".
 
 **MAXIMUM SLOTS METHOD** Choose how the module sets each actor's maximum number of inventory slots that they can fill before they become encumbered.
 - *Use Base Value Only* The actor's maximum inventory slots are set to the base value assigned in module settings.
