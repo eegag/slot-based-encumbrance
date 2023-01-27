@@ -13,8 +13,25 @@
 		"BaseSlotValueHint": "Not used if an ability score is used as the base!",
 		"CoinsPerSlot": "Coins Per Slot",
 		"CoinsPerSlotHint": "How many coins (of any denomination) fit in one inventory slot?",
+		"ShowNotify": "Show notifications?",
+		"ShowNotifyHint": "Display notifications to the players when they try to carry, hold, or wear too much?",
+		"MvCalcType": "Movement Calculation Method",
+		"MvCalcTypeHint": "BASIC calculates speed based on armor alone, DETAILED uses slots filled to determine speed",
+		"MvConfigButton": "Configure Detailed Movement",
+		"MvConfigLabel": "Configure",
+		"MvConfigHint": "Set the thresholds of slots filled for movement speeds (DETAILED only)",
+		"MvBasic": "Basic",
+		"MvDetailed": "Detailed",
 		"CountEquipped": "Exclude equipped items?",
 		"CountEquippedHint": "Choose if the slot value of carried or worn items counts toward encumbrance"
+	},
+	"config": {
+		"Title": "Detailed Movement Configuration",
+		"Heading": "Set Thresholds for Movement Rate:",
+		"MvRate90": "Up to _ slots for 120' Mv",
+		"MvRate60": "Up to _ slots for 90' Mv",
+		"MvRate30": "Up to _ slots for 60' Mv",
+		"Save": "Save Choices"
 	},
 	"labels": {
 	  "CharacterSheet": "Slot-Based Encumbrance Character Sheet",

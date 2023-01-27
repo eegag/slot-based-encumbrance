@@ -20,6 +20,52 @@ class SbeCore {
 }
 
 /**
+ * Class to populate the detailed movement settings form
+ */
+class MovementConfigForm extends FormApplication {
+	constructor(data, options) {
+			super(data, options);
+			this.data = data;
+	}
+
+  getData() {
+    const data = {};
+    data.mvThreshold = {
+			90: game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold90,
+			60: game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold60,
+			30: game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold30,
+    }
+    return data;
+  }
+	
+	/**
+	 * Default Options for this FormApplication
+	 */
+	static get defaultOptions() {
+		return mergeObject(super.defaultOptions, {
+				id: "movement-config",
+				title: "SLOT-BASED-ENCUMBRANCE.config.Title",
+				template: "./modules/slot-based-encumbrance/templates/movement-config.html",
+				classes: ["sheet"],
+				width: 500
+		});
+	}
+
+	/**
+	 * Update on form submit
+	 * @param {*} event 
+	 * @param {*} formData 
+	 */
+	async _updateObject(event, formData) {
+		await game.settings.set("slot-based-encumbrance", "mvThresholds", {
+				mvThreshold90: formData["mv-threshold-90"],
+				mvThreshold60: formData["mv-threshold-60"],
+				mvThreshold30: formData["mv-threshold-30"]
+		});
+	}
+}
+
+/**
  * Class to modify the OSE item sheet
  */
 class UpdateItemSheet {
@@ -114,7 +160,7 @@ function loadActorSheetCharacter(superclass) {
  * to compute encumbrance and movement speed
  */
 function sbeActor(superclass) {
-	return class extends superclass {
+	return class SbeActor extends superclass {
 
 		prepareData() {
 		super.prepareData();
@@ -132,6 +178,12 @@ function sbeActor(superclass) {
 			
 			const data = this.system;
 			const countEquipped = game.settings.get("slot-based-encumbrance", "countEquipped");
+			const showNotify = game.settings.get("slot-based-encumbrance", "showNotify");
+			const mvCalcType = game.settings.get("slot-based-encumbrance", "mvCalcType");
+			
+			const mvThreshold90 = game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold90;
+			const mvThreshold60 = game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold60;
+			const mvThreshold30 = game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold30;
 			
 			// Compute encumbrance
 			const items = [...this.items.values()];
@@ -169,14 +221,14 @@ function sbeActor(superclass) {
 			}, 0);
 
 			// If you tried to wear multiple suits of armor, annoy you with a message
-			if (game.ready && wornArmor > 1 && this.isOwner && !game.user.isGM) {
+			if (game.ready && wornArmor > 1 && this.isOwner && !game.user.isGM && showNotify) {
 				ui.notifications.error(
 					game.i18n.localize("SLOT-BASED-ENCUMBRANCE.messages.TooMuchArmorMessage")
 					);
 			}
 
 			// If you tried to hold too many items, annoy you with a message
-			if (game.ready && heldItems > 2 && this.isOwner && !game.user.isGM) {
+			if (game.ready && heldItems > 2 && this.isOwner && !game.user.isGM && showNotify) {
 				ui.notifications.warn(
 					game.i18n.localize("SLOT-BASED-ENCUMBRANCE.messages.TooManyHeldItemsMessage")
 					);
@@ -204,21 +256,30 @@ function sbeActor(superclass) {
 				max = this.flags.inventory.max;
 			}
 			
+			let steps =
+				mvCalcType === "detailed"
+				? [(100 * mvThreshold90) / max, (100 * mvThreshold60) / max, (100 * mvThreshold30) / max]
+				: [];
+			
 			this.flags.inventory = {
 				pct: Math.clamped((100 * parseFloat(totalWeight)) / max, 0, 100),
 				max: max,
 				encumbered: totalWeight > max || heldItems > 2,
 				value: totalWeight,
+				steps: steps,
 			};
-
-			if (this.type != "monster") {
-				this.calculateMovementSpeed();
+			
+			if (this.type != "monster" && mvCalcType == "detailed") {
+				this.calculateDetailedMovement();
+			} else {
+				this.calculateBasicMovement();
 			}
 		}
 
-		calculateMovementSpeed() {
+		calculateBasicMovement() {
 			const data = this.system;
 			const weight = this.flags.inventory.value;
+			const showNotify = game.settings.get("slot-based-encumbrance", "showNotify");
 
 			const armors = this.items.filter((i) => i.type === "armor");
 			let heaviest = 0;
@@ -248,11 +309,38 @@ function sbeActor(superclass) {
 			
 	    if (this.flags.inventory.encumbered) {
 				data.movement.base = 0;
-				if (game.ready && this.isOwner && !game.user.isGM) {
+				if (game.ready && this.isOwner && !game.user.isGM && showNotify) {
 					ui.notifications.warn(
 					game.i18n.localize("SLOT-BASED-ENCUMBRANCE.messages.EncumberedWarningMessage")
 					);
 				}
+			}
+		}
+		
+		calculateDetailedMovement() {
+			const data = this.system;
+			const weight = this.flags.inventory.value;
+			const showNotify = game.settings.get("slot-based-encumbrance", "showNotify");
+			
+			const mvThreshold90 = game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold90;
+			const mvThreshold60 = game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold60;
+			const mvThreshold30 = game.settings.get("slot-based-encumbrance", "mvThresholds").mvThreshold30;
+
+			if (this.flags.inventory.encumbered) {
+				data.movement.base = 0;
+				if (game.ready && this.isOwner && !game.user.isGM && showNotify) {
+					ui.notifications.warn(
+					game.i18n.localize("SLOT-BASED-ENCUMBRANCE.messages.EncumberedWarningMessage")
+					);
+				}
+			} else if (weight <= mvThreshold90) {
+				data.movement.base = 120;
+			} else if (weight <= mvThreshold60) {
+				data.movement.base = 90;
+			} else if (weight <= mvThreshold30) {
+				data.movement.base = 60;
+			} else {
+				data.movement.base = 30;
 			}
 		}
 	};
@@ -381,13 +469,17 @@ const registerSettings = function() {
     },
   });
 	
-  game.settings.register("ose", "significantTreasure", {
-    name: game.i18n.localize("OSE.Setting.SignificantTreasure"),
-    hint: game.i18n.localize("OSE.Setting.SignificantTreasureHint"),
-    default: 800,
+  game.settings.register("slot-based-encumbrance", "mvCalcType", {
+    name: game.i18n.localize("SLOT-BASED-ENCUMBRANCE.settings.MvCalcType"),
+    hint: game.i18n.localize("SLOT-BASED-ENCUMBRANCE.settings.MvCalcTypeHint"),
+    default: "basic",
     scope: "world",
-    type: Number,
-    config: false,
+    type: String,
+    config: true,
+    choices: {
+			basic: "SLOT-BASED-ENCUMBRANCE.settings.MvBasic",
+			detailed: "SLOT-BASED-ENCUMBRANCE.settings.MvDetailed",
+    },
   });
 
   game.settings.register("slot-based-encumbrance", "determineSlots", {
@@ -432,6 +524,40 @@ const registerSettings = function() {
     type: Boolean,
     config: true,
   });
+	
+		game.settings.register("slot-based-encumbrance", "showNotify", {
+    name: game.i18n.localize("SLOT-BASED-ENCUMBRANCE.settings.ShowNotify"),
+    hint: game.i18n.localize("SLOT-BASED-ENCUMBRANCE.settings.ShowNotifyHint"),
+    default: true,
+    scope: "world",
+    type: Boolean,
+    config: true,
+  });
+	
+	game.settings.register("slot-based-encumbrance", "mvThresholds", {
+			name: "name",
+			hint: "hint",
+			scope: "world",
+			type: Object,
+			default: {
+					mvThreshold90: "",
+					mvThreshold60: "",
+					mvThreshold30: ""
+			},
+			config: false,
+			onChange: s => {
+
+			}
+	});
+	
+		game.settings.registerMenu("slot-based-encumbrance", "movementConfigMenu",{
+			name: "SLOT-BASED-ENCUMBRANCE.settings.MvConfigButton",
+			label: "SLOT-BASED-ENCUMBRANCE.settings.MvConfigLabel",
+			hint: "SLOT-BASED-ENCUMBRANCE.settings.MvConfigHint",
+			icon: "fas fa-cog",
+			type: MovementConfigForm,
+			restricted: true
+	});
 }
 
 const preloadHandlebarsTemplates = async function () {
