@@ -1,4 +1,10 @@
 /**
+ * Global variable to add condition modifiers to rolls
+ * Change once OSE system is more mod friendly again?
+ */
+var cModGlobal = null;
+
+/**
  * Core constants and logic for slot-based-encumbrance
  */
 class SbeCore {
@@ -116,6 +122,26 @@ class UpdateItemSheet {
 }
 
 /**
+ * Class to modify the roll dialog
+ */
+class UpdateRollDialog {
+  static async includeModifiers(app, html, data) {
+
+		if (html[0].innerHTML.indexOf("Situational Modifier") == -1) {
+			return;
+		}
+
+		// Find Situation Modifier field
+		const eField = document.querySelector("div.form-group input[name='bonus']");
+
+		// Add modifier from conditions into Sit Mod field
+		if (cModGlobal !== 0) {
+			eField.value = cModGlobal;
+		}
+  }
+}
+
+/**
  * Function to extend the OseActorSheetCharacter class during ready hook
  * to overwrite system default character sheet
  */
@@ -149,6 +175,19 @@ function loadActorSheetCharacter(superclass) {
 					});
 				}
 			});
+			
+			this.options.editable && (html.find(".condition-create").click((html=>{
+				this.actor.createEmbeddedDocuments("Item",[
+					{
+						name: "New Condition",
+						type: "item",
+						flags: {
+							condition: true
+						}
+					}
+				])
+			}
+			)))
 		}
 	}
 	
@@ -163,8 +202,9 @@ function sbeActor(superclass) {
 	return class SbeActor extends superclass {
 
 		prepareData() {
-		super.prepareData();
-		this.computeInventorySlots();
+			super.prepareData();
+			this.computeInventorySlots();
+			this.addConditionPenalties();
 		}
 
 	  /**
@@ -271,11 +311,15 @@ function sbeActor(superclass) {
 			
 			if (this.type != "monster" && mvCalcType == "detailed") {
 				this.calculateDetailedMovement();
-			} else {
+			} else if (this.type != "monster") {
 				this.calculateBasicMovement();
 			}
 		}
 
+	  /**
+	   * Function to calculate the actor's movement speed based on armor worn
+	   * Called if Basic movement selected in module settings
+	   */
 		calculateBasicMovement() {
 			const data = this.system;
 			const weight = this.flags.inventory.value;
@@ -317,6 +361,10 @@ function sbeActor(superclass) {
 			}
 		}
 		
+	  /**
+	   * Function to calculate the actor's movement speed based on slots filled
+	   * Called if Detailed movement selected in module settings
+	   */
 		calculateDetailedMovement() {
 			const data = this.system;
 			const weight = this.flags.inventory.value;
@@ -343,6 +391,48 @@ function sbeActor(superclass) {
 				data.movement.base = 30;
 			}
 		}
+		
+		addConditionPenalties() {
+			if (this.id == null || !this.isOwner) {
+				return;
+			}
+			
+			const items = [...this.items.values()];
+			
+			let cumulativePenalty = items.reduce((acc, item) => {
+				
+				if (item.flags.condition) {
+					return acc + item.flags.totalSlots;
+				} else {
+					return acc;
+				}
+			}, 0);
+			if (this.flags.modifiers != cumulativePenalty * -1) {
+				this.flags.modifiers = cumulativePenalty * -1;
+				
+				this.update({
+					flags: this.flags
+				});
+			}
+		}
+		
+		rollSave(e, t={}) {
+			cModGlobal = this.flags.modifiers;
+
+			super.rollSave(e, t);
+    }
+		
+		rollCheck(e, t={}) {
+			cModGlobal = this.flags.modifiers * -1;
+
+			super.rollCheck(e, t);
+    }
+		
+		rollAttack(e, t={}) {
+			cModGlobal = this.flags.modifiers;
+
+			super.rollAttack(e, t);
+    }
 	};
 }
 
@@ -406,11 +496,11 @@ function sbeItem(superclass) {
 			if (this.type == "ability" || this.type == "spell" || this.flags.slots === undefined) {
 				return;
 			}
-			
+
 			const coinsPerSlot = game.settings.get("slot-based-encumbrance", "coinsPerSlot");
 			
 			//Container totalSlots calculation (with embedded totalSlots math to recalc item totals)
-			if (this.type == "container" && game.ready && this.actor) {
+			if (this.type == "container" && this.actor) {
 
 				const actorItems = this.actor.items.contents;
 				const containerID = this._id;
@@ -428,6 +518,7 @@ function sbeItem(superclass) {
 						}
 						
 						slotTotal = slotTotal + totalSlots;
+
 					}
 				}
 				
@@ -572,10 +663,17 @@ const preloadHandlebarsTemplates = async function () {
 };
 
 /**
- * Render ItemSheet Hook
+ * Render ItemSheet Hook for slots field
  */
 Hooks.on("renderItemSheet", (app, html, data) => {
 	UpdateItemSheet.addSlotFields(app, html, data);
+});
+
+/**
+ * Render Application Hook for roll-dialog
+ */
+Hooks.on("renderDialog", (app, html, data) => {
+	UpdateRollDialog.includeModifiers(app, html, data);
 });
 
 /**
@@ -591,6 +689,7 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
 Hooks.once('init', () => {
   registerSettings();
 	preloadHandlebarsTemplates();
+	console.log(`Slot-Based-Encumbrance`);
 	// Extend OseItem and OseActor classes with slots and totalSlots during init
 	CONFIG.Item.documentClass = sbeItem(CONFIG.Item.documentClass);
 	CONFIG.Actor.documentClass = sbeActor(CONFIG.Actor.documentClass);
@@ -598,8 +697,8 @@ Hooks.once('init', () => {
 
 Hooks.once('ready', () => {
   // Unregister default OSE character sheet to load slot-based version
-	const sbeCharSheet = loadActorSheetCharacter(CONFIG.Actor.sheetClasses.character["ose.M"].cls);
-	Actors.unregisterSheet("ose", CONFIG.Actor.sheetClasses.character["ose.M"].cls);
+	const sbeCharSheet = loadActorSheetCharacter(CONFIG.Actor.sheetClasses.character["ose.I"].cls);
+	Actors.unregisterSheet("ose", CONFIG.Actor.sheetClasses.character["ose.I"].cls);
 	Actors.registerSheet("ose", sbeCharSheet, {
     types: ["character"],
     makeDefault: true,

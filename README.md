@@ -6,7 +6,7 @@ Created by eegag for use with the OSE system.
 
 Install in FoundryVTT with the following URL:
 
-https://github.com/eegag/slot-based-encumbrance/releases/download/v0.5.0/module.json
+https://github.com/eegag/slot-based-encumbrance/releases/download/v0.5.1/module.json
 
 ### features
 

@@ -36,6 +36,7 @@
 	"labels": {
 	  "CharacterSheet": "Slot-Based Encumbrance Character Sheet",
 		"SlotsField": "Slots",
+		"Conditions": "Conditions",
 		"AdventuringGear": "Gear"
 	},
 	"messages": {
